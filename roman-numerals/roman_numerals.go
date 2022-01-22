@@ -24,8 +24,6 @@ func ToRomanNumeral(input int) (string, error) {
 		{roman: "XC", arabic: 90},
 		{roman: "L", arabic: 50},
 		{roman: "XL", arabic: 40},
-		{roman: "XXX", arabic: 30},
-		{roman: "XX", arabic: 20},
 		{roman: "X", arabic: 10},
 		{roman: "IX", arabic: 9},
 		{roman: "V", arabic: 5},
