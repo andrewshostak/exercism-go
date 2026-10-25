@@ -1,30 +1,42 @@
-package letter
+package parallelletterfrequency
+
+import (
+	"strings"
+)
 
 type FreqMap map[rune]int
 
 func Frequency(s string) FreqMap {
-	m := FreqMap{}
-	for _, r := range s {
-		m[r]++
-	}
-	return m
-}
-
-func ConcurrentFrequency(parts []string) FreqMap {
-	frequencyChannel := make(chan FreqMap, len(parts))
-
-	for _, part := range parts {
-		go func(part string, ch chan<- FreqMap) {
-			ch <- Frequency(part)
-		}(part, frequencyChannel)
-	}
-
+	s = strings.ToLower(s)
 	frequencyMap := FreqMap{}
-	for range parts {
-		for k, v := range <-frequencyChannel {
-			frequencyMap[k] += v
+
+	runes := []rune(s)
+	for _, r := range runes {
+		if r < 'a' {
+			continue
 		}
+
+		frequencyMap[r]++
 	}
 
 	return frequencyMap
+}
+
+func ConcurrentFrequency(parts []string) FreqMap {
+	total := FreqMap{}
+
+	ch := make(chan FreqMap, len(parts))
+	for _, part := range parts {
+		go func(part string) {
+			ch <- Frequency(part)
+		}(part)
+	}
+
+	for range parts {
+		for k, v := range <-ch {
+			total[k] += v
+		}
+	}
+
+	return total
 }
