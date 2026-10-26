@@ -1,12 +1,52 @@
-package account
+package bankaccount
 
 import (
+	"fmt"
 	"runtime"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
 )
+
+func TestBankAccount(t *testing.T) {
+	for _, tc := range testCases {
+		t.Run(tc.description, func(t *testing.T) {
+			var amount int64
+			account := &Account{}
+			var ok bool
+			var calls []string
+			for _, op := range tc.operations {
+				switch op.Name {
+				case "open":
+					account = Open(0)
+					calls = append(calls, "account = Open(0)")
+				case "close":
+					_, ok = account.Close()
+					calls = append(calls, "account.Close()")
+				case "balance":
+					amount, ok = account.Balance()
+					calls = append(calls, "account.Balance()")
+				case "deposit":
+					amount, ok = account.Deposit(op.Amount)
+					calls = append(calls, fmt.Sprintf("account.Deposit(%d)", op.Amount))
+				case "withdraw":
+					amount, ok = account.Withdraw(op.Amount)
+					calls = append(calls, fmt.Sprintf("account.Withdraw(%d)", op.Amount))
+				}
+			}
+			callstack := strings.Join(calls, "; ")
+			if tc.expectedErr != "" {
+				if ok {
+					t.Fatalf("%s, ok = %t, want false, %s", callstack, ok, tc.expectedErr)
+				}
+			} else if amount != tc.expected {
+				t.Fatalf("%s = %d, want %d", callstack, amount, tc.expected)
+			}
+		})
+	}
+}
 
 func TestSeqOpenBalanceClose(t *testing.T) {
 	// open account
@@ -184,7 +224,7 @@ func TestConcClose(t *testing.T) {
 		start.Add(1)
 		const closeAttempts = 10
 		res := make(chan string)
-		for i := 0; i < closeAttempts; i++ {
+		for range closeAttempts {
 			go func() { // on your mark,
 				start.Wait() // get set...
 				switch p, ok := a.Close(); {
@@ -207,7 +247,7 @@ func TestConcClose(t *testing.T) {
 		}
 		start.Done() // ...go
 		var closes, fails int
-		for i := 0; i < closeAttempts; i++ {
+		for range closeAttempts {
 			switch <-res {
 			case "close":
 				closes++
@@ -229,6 +269,44 @@ func TestConcClose(t *testing.T) {
 	}
 }
 
+// "uuid": "ba0c1e0b-0f00-416f-8097-a7dfc97871ff",
+// "description": "Can handle concurrent transactions",
+func TestConcTransactions(t *testing.T) {
+	if runtime.NumCPU() < 2 {
+		t.Skip("Multiple CPU cores required for concurrency tests.")
+	}
+	if runtime.GOMAXPROCS(0) < 2 {
+		runtime.GOMAXPROCS(2)
+	}
+	a := Open(0)
+	if a == nil {
+		t.Fatal("Open(0) = nil, want non-nil *Account.")
+	}
+	var start, wg sync.WaitGroup
+	var err bool
+	start.Add(1)
+	for range 10000 {
+		wg.Go(func() {
+			start.Wait()
+			_, okD := a.Deposit(1)
+			_, okW := a.Withdraw(1)
+			if !okD || !okW {
+				err = true
+			}
+		})
+	}
+	start.Done()
+	wg.Wait()
+	if err {
+		t.Fatal("An operation returned not ok!")
+	}
+	if got, ok := a.Balance(); !ok {
+		t.Fatalf("Balance(), ok = %t, want %t", ok, true)
+	} else if got != 0 {
+		t.Fatalf("Balance() = %d, want %d", got, 0)
+	}
+}
+
 func TestConcDeposit(t *testing.T) {
 	if runtime.NumCPU() < 2 {
 		t.Skip("Multiple CPU cores required for concurrency tests.")
@@ -246,7 +324,7 @@ func TestConcDeposit(t *testing.T) {
 	var start, g sync.WaitGroup
 	start.Add(1)
 	g.Add(3 * c)
-	for i := 0; i < c; i++ {
+	for range c {
 		go func() { // deposit
 			start.Wait()
 			a.Deposit(amt) // ignore return values
@@ -308,9 +386,6 @@ func TestConcDeposit(t *testing.T) {
 // and see how their implementation changes the results of the parallel
 // benchmark.
 func BenchmarkAccountOperations(b *testing.B) {
-	if testing.Short() {
-		b.Skip("skipping benchmark in short mode.")
-	}
 	a := Open(0)
 	defer a.Close()
 	for n := 0; n < b.N; n++ {
@@ -320,9 +395,6 @@ func BenchmarkAccountOperations(b *testing.B) {
 }
 
 func BenchmarkAccountOperationsParallel(b *testing.B) {
-	if testing.Short() {
-		b.Skip("skipping benchmark in short mode.")
-	}
 	a := Open(0)
 	defer a.Close()
 	b.RunParallel(func(pb *testing.PB) {
