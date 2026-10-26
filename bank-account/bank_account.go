@@ -5,7 +5,7 @@ import "sync"
 type Account struct {
 	currentBalance int64
 	isClosed       bool
-	mutex          *sync.Mutex
+	mutex          sync.Mutex
 }
 
 func Open(initialDeposit int64) *Account {
@@ -13,12 +13,16 @@ func Open(initialDeposit int64) *Account {
 		return nil
 	}
 
-	return &Account{currentBalance: initialDeposit, mutex: &sync.Mutex{}}
+	return &Account{
+		currentBalance: initialDeposit,
+		mutex:          sync.Mutex{},
+	}
 }
 
 func (a *Account) Close() (payout int64, ok bool) {
 	a.mutex.Lock()
 	defer a.mutex.Unlock()
+
 	if a.isClosed {
 		return 0, false
 	}
@@ -31,6 +35,7 @@ func (a *Account) Close() (payout int64, ok bool) {
 func (a *Account) Balance() (balance int64, ok bool) {
 	a.mutex.Lock()
 	defer a.mutex.Unlock()
+
 	if a.isClosed {
 		return 0, false
 	}
@@ -41,22 +46,16 @@ func (a *Account) Balance() (balance int64, ok bool) {
 func (a *Account) Deposit(amount int64) (newBalance int64, ok bool) {
 	a.mutex.Lock()
 	defer a.mutex.Unlock()
+
 	if a.isClosed {
 		return 0, false
 	}
 
-	if amount > 0 {
-		a.currentBalance += amount
+	if a.currentBalance+amount < 0 {
+		return 0, false
 	}
 
-	if amount < 0 {
-		afterWithdrawalBalance := a.currentBalance + amount
-		if afterWithdrawalBalance < 0 {
-			return a.currentBalance, false
-		}
-
-		a.currentBalance = afterWithdrawalBalance
-	}
+	a.currentBalance += amount
 
 	return a.currentBalance, true
 }
