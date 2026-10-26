@@ -332,8 +332,3 @@ func BenchmarkAccountOperationsParallel(b *testing.B) {
 		}
 	})
 }
-
-// 40580068	        27.92 ns/op
-// 43463694	        27.76 ns/op
-// 43695336	        27.44 ns/op
-// 43463757	        27.69 ns/op
