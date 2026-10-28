@@ -5,17 +5,21 @@ func SearchInts(slice []int, key int) int {
 }
 
 func binarySearch(slice []int, left, right, key int) int {
-	if right >= left {
-		middle := left + (right-left)/2
-		if slice[middle] == key {
-			return middle
-		}
+	if left > right {
+		return -1
+	}
 
-		if slice[middle] > key {
-			return binarySearch(slice, left, middle-1, key)
-		}
+	middleIndex := (left + right) / 2
+	if slice[middleIndex] == key {
+		return middleIndex
+	}
 
-		return binarySearch(slice, middle+1, right, key)
+	if slice[middleIndex] > key {
+		return binarySearch(slice, left, middleIndex-1, key)
+	}
+
+	if slice[middleIndex] < key {
+		return binarySearch(slice, middleIndex+1, right, key)
 	}
 
 	return -1
