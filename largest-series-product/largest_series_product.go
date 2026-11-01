@@ -2,40 +2,45 @@ package lsproduct
 
 import (
 	"errors"
-	"strconv"
-	"strings"
 )
 
 func LargestSeriesProduct(digits string, span int) (int, error) {
 	if span < 0 {
-		return -1, errors.New("span must be greater than zero")
+		return -1, errors.New("span must not be negative")
+	}
+
+	if span == 0 {
+		return 1, nil
 	}
 
 	if span > len(digits) {
 		return -1, errors.New("span must be smaller than string length")
 	}
 
-	splitted := strings.Split(digits, "")
-	ints := make([]int, 0, len(splitted))
-	for i := range splitted {
-		asInt, err := strconv.Atoi(splitted[i])
-		if err != nil {
-			return -1, errors.New("digits input must only contain digits")
+	ints := make([]int, 0, len(digits))
+	for _, s := range digits {
+		if s < '0' || s > '9' {
+			return 0, errors.New("digits input must only contain digits")
 		}
-		ints = append(ints, asInt)
+
+		ints = append(ints, int(s-'0'))
 	}
 
-	product := 0
-	for i := 0; i+span <= len(ints); i++ {
-		sum := 1
-		part := ints[i : i+span]
-		for j := range part {
-			sum *= part[j]
+	largest := 0
+	for i := range ints {
+		product := 1
+		start := i
+		end := i + span
+		if end > len(ints) {
+			break
 		}
-		if sum > product {
-			product = sum
+		for _, digit := range ints[start:end] {
+			product *= digit
+		}
+		if product > largest {
+			largest = product
 		}
 	}
 
-	return product, nil
+	return largest, nil
 }
