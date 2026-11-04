@@ -13,13 +13,12 @@ type Element struct {
 }
 
 func New(elements []int) *List {
-	var next *Element
-	for i := len(elements) - 1; i >= 0; i-- {
-		e := &Element{value: elements[i], next: next}
-		next = e
+	l := List{}
+	for _, v := range elements {
+		l.Push(v)
 	}
 
-	return &List{length: len(elements), first: next}
+	return &l
 }
 
 func (l *List) Size() int {
@@ -27,18 +26,11 @@ func (l *List) Size() int {
 }
 
 func (l *List) Push(element int) {
-	defer func() { l.length++ }()
-	if l.first == nil {
-		l.first = &Element{value: element, next: nil}
-		return
+	l.first = &Element{
+		value: element,
+		next:  l.first,
 	}
-
-	next := l.first
-	for next.next != nil {
-		next = next.next
-	}
-
-	next.next = &Element{value: element, next: nil}
+	l.length++
 }
 
 func (l *List) Pop() (int, error) {
@@ -46,18 +38,11 @@ func (l *List) Pop() (int, error) {
 		return 0, errors.New("list is empty")
 	}
 
-	previous := l.first
-	last := l.first
+	value := l.first.value
+	l.first = l.first.next
+	l.length--
 
-	for {
-		if last.next == nil {
-			l.length--
-			previous.next = nil
-			return last.value, nil
-		}
-		previous = last
-		last = last.next
-	}
+	return value, nil
 }
 
 func (l *List) Peek() (int, error) {
@@ -65,36 +50,28 @@ func (l *List) Peek() (int, error) {
 		return 0, errors.New("list is empty")
 	}
 
-	next := l.first
-	for next.next != nil {
-		next = next.next
-	}
-
-	v := next.value
-	return v, nil
+	return l.first.value, nil
 }
 
 func (l *List) Array() []int {
-	arr := make([]int, 0, l.length)
-	if l.first == nil {
-		return arr
-	}
+	arr := make([]int, l.length)
 
-	next := l.first
-	for i := 1; i <= l.length; i++ {
-		arr = append(arr, next.value)
-		next = next.next
+	current := l.first
+	for i := l.length - 1; current != nil; i-- {
+		arr[i] = current.value
+		current = current.next
 	}
 
 	return arr
 }
 
 func (l *List) Reverse() *List {
-	arr := l.Array()
-	reversed := make([]int, 0, len(arr))
-	for i := len(arr) - 1; i >= 0; i-- {
-		reversed = append(reversed, arr[i])
+	arr := make([]int, 0, l.length)
+	current := l.first
+	for current != nil {
+		arr = append(arr, current.value)
+		current = current.next
 	}
 
-	return New(reversed)
+	return New(arr)
 }
