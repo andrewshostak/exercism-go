@@ -1,105 +1,100 @@
-package linkedlist
+package simplelinkedlist
 
 import "errors"
 
-type Element struct {
-	data int
-	next *Element
-}
-
 type List struct {
-	head *Element
-	size int
+	length int
+	first  *Element
 }
 
-func New(numbers []int) *List {
-	return &List{
-		head: createLinkedList(numbers),
-		size: len(numbers),
-	}
+type Element struct {
+	value int
+	next  *Element
 }
 
-func createLinkedList(numbers []int) *Element {
-	if len(numbers) == 0 {
-		return nil
+func New(elements []int) *List {
+	var next *Element
+	for i := len(elements) - 1; i >= 0; i-- {
+		e := &Element{value: elements[i], next: next}
+		next = e
 	}
 
-	element := &Element{data: numbers[0]}
-
-	tmp := element
-	for _, v := range numbers[1:] {
-		t := &Element{data: v}
-		tmp.next = t
-		tmp = tmp.next
-	}
-
-	return element
+	return &List{length: len(elements), first: next}
 }
 
 func (l *List) Size() int {
-	return l.size
+	return l.length
 }
 
-func (l *List) Push(number int) {
-	if l.Size() == 0 {
-		l.head = &Element{data: number}
-		l.size++
+func (l *List) Push(element int) {
+	defer func() { l.length++ }()
+	if l.first == nil {
+		l.first = &Element{value: element, next: nil}
 		return
 	}
 
-	last := l.head
-	for {
-		if last.next == nil {
-			last.next = &Element{data: number}
-			break
-		}
-		last = last.next
+	next := l.first
+	for next.next != nil {
+		next = next.next
 	}
-	l.size++
+
+	next.next = &Element{value: element, next: nil}
 }
 
 func (l *List) Pop() (int, error) {
-	if l.Size() == 0 {
-		return 0, errors.New("pop from empty list is not allowed")
+	if l.length == 0 {
+		return 0, errors.New("list is empty")
 	}
 
-	last := l.head
-	previous := l.head
+	previous := l.first
+	last := l.first
+
 	for {
 		if last.next == nil {
-			l.size--
+			l.length--
 			previous.next = nil
-			return last.data, nil
+			return last.value, nil
 		}
 		previous = last
 		last = last.next
 	}
 }
 
-func (l *List) Array() []int {
-	var array []int
-
-	element := l.head
-	for ; element != nil; element = element.next {
-		array = append(array, element.data)
+func (l *List) Peek() (int, error) {
+	if l.length == 0 {
+		return 0, errors.New("list is empty")
 	}
 
-	return array
+	next := l.first
+	for next.next != nil {
+		next = next.next
+	}
+
+	v := next.value
+	return v, nil
+}
+
+func (l *List) Array() []int {
+	arr := make([]int, 0, l.length)
+	if l.first == nil {
+		return arr
+	}
+
+	next := l.first
+	for i := 1; i <= l.length; i++ {
+		arr = append(arr, next.value)
+		next = next.next
+	}
+
+	return arr
 }
 
 func (l *List) Reverse() *List {
-	if l.Size() == 0 {
-		return l
+	arr := l.Array()
+	reversed := make([]int, 0, len(arr))
+	for i := len(arr) - 1; i >= 0; i-- {
+		reversed = append(reversed, arr[i])
 	}
 
-	array := l.Array()
-	reversed := make([]int, 0, len(array))
-
-	for i := len(array) - 1; i >= 0; i-- {
-		reversed = append(reversed, array[i])
-	}
-
-	l.head = createLinkedList(reversed)
-
-	return l
+	return New(reversed)
 }
