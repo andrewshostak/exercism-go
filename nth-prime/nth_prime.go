@@ -1,26 +1,32 @@
-package prime
+package nthprime
 
-import "math"
+import (
+	"errors"
+)
 
-func Nth(n int) (int, bool) {
+func Nth(n int) (int, error) {
 	foundPrimes := 0
 	for i := 2; foundPrimes < n; i++ {
-		if isPrime(i) {
+		isPrime := IsPrime(i)
+		if isPrime {
 			foundPrimes++
-			if foundPrimes == n {
-				return i, true
-			}
+		}
+
+		if foundPrimes == n {
+			return i, nil
 		}
 	}
 
-	return 0, false
+	return 0, errors.New("n must be greater than 0")
 }
 
-func isPrime(n int) bool {
-	f := math.Sqrt(float64(n))
+func IsPrime(n int) bool {
+	for j := 2; j <= n; j++ {
+		if n == j {
+			continue
+		}
 
-	for i := 2; i <= int(f); i++ {
-		if n%i == 0 {
+		if n%j == 0 {
 			return false
 		}
 	}
