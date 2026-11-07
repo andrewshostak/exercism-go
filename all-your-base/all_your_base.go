@@ -1,96 +1,49 @@
 package allyourbase
 
-import (
-	"errors"
-	"math"
-)
+import "errors"
 
 func ConvertToBase(inputBase int, inputDigits []int, outputBase int) ([]int, error) {
-	if err := validateInput(inputBase, inputDigits, outputBase); err != nil {
-		return nil, err
-	}
-
-	if inputBase == 10 {
-		return fromDecimal(inputDigits, outputBase), nil
-	} else if outputBase == 10 {
-		return toDecimal(inputBase, inputDigits), nil
-	}
-
-	decimal := toDecimal(inputBase, inputDigits)
-	return fromDecimal(decimal, outputBase), nil
-}
-
-func fromDecimal(inputDigits []int, outputBase int) []int {
-	digit := sliceToInt(inputDigits)
-
-	if digit == 0 {
-		return []int{0}
-	}
-
-	result := make([]int, 0)
-	for digit != 0 {
-		result = append(result, digit%outputBase)
-		digit = digit / outputBase
-	}
-
-	return reverseSlice(result)
-}
-
-func toDecimal(inputBase int, inputDigits []int) []int {
-	var sum int
-	for i, digit := range inputDigits {
-		q := len(inputDigits) - 1 - i // 2, 1, 0 for 3-digit number
-		result := digit * int(math.Pow(float64(inputBase), float64(q)))
-		sum += result
-	}
-
-	if len(inputDigits) == 0 {
-		return []int{0}
-	}
-
-	return intToSlice(sum)
-}
-
-func validateInput(inputBase int, inputDigits []int, outputBase int) error {
 	if inputBase < 2 {
-		return errors.New("input base must be >= 2")
-	}
-
-	for _, digit := range inputDigits {
-		if digit < 0 || inputBase <= digit {
-			return errors.New("all digits must satisfy 0 <= d < input base")
-		}
+		return nil, errors.New("input base must be >= 2")
 	}
 
 	if outputBase < 2 {
-		return errors.New("output base must be >= 2")
+		return nil, errors.New("output base must be >= 2")
 	}
 
-	return nil
-}
-
-func sliceToInt(s []int) int {
-	res := 0
-	op := 1
-	for i := len(s) - 1; i >= 0; i-- {
-		res += s[i] * op
-		op *= 10
+	for _, v := range inputDigits {
+		if v >= inputBase || v < 0 {
+			return nil, errors.New("all digits must satisfy 0 <= d < input base")
+		}
 	}
 
-	return res
+	asDecimal := toDecimal(inputBase, inputDigits)
+	asOutputBase := decimalToBase(asDecimal, outputBase)
+
+	return asOutputBase, nil
 }
 
-func intToSlice(i int) []int {
-	digits := make([]int, 0)
-	for i != 0 {
-		digits = append(digits, i%10)
-		i = i / 10
+func toDecimal(inputBase int, inputDigits []int) int {
+	result := 0
+	for _, v := range inputDigits { // метод Горнера — йдеш по цифрах зліва праворуч
+		result = result*inputBase + v
 	}
 
-	return reverseSlice(digits)
+	return result
 }
 
-func reverseSlice(digits []int) []int {
+func decimalToBase(decimal, base int) []int {
+	if decimal == 0 {
+		return []int{0}
+	}
+
+	digits := []int{}
+	for decimal > 0 {
+		digit := decimal % base // залишок від ділення
+		digits = append(digits, digit)
+		decimal = decimal / base // наступна операція для залишку від ділення - ділення
+	}
+
 	reversed := make([]int, 0, len(digits))
 	for i := len(digits) - 1; i >= 0; i-- {
 		reversed = append(reversed, digits[i])
