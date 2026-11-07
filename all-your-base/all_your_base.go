@@ -25,7 +25,7 @@ func ConvertToBase(inputBase int, inputDigits []int, outputBase int) ([]int, err
 
 func toDecimal(inputBase int, inputDigits []int) int {
 	result := 0
-	for _, v := range inputDigits { // метод Горнера — йдеш по цифрах зліва праворуч
+	for _, v := range inputDigits {
 		result = result*inputBase + v
 	}
 
@@ -39,9 +39,9 @@ func decimalToBase(decimal, base int) []int {
 
 	digits := []int{}
 	for decimal > 0 {
-		digit := decimal % base // залишок від ділення
+		digit := decimal % base
 		digits = append(digits, digit)
-		decimal = decimal / base // наступна операція для залишку від ділення - ділення
+		decimal = decimal / base
 	}
 
 	reversed := make([]int, 0, len(digits))
