@@ -1,5 +1,4 @@
 {
-  "blurb": "Refactor a tree building algorithm.",
   "authors": [
     "pminten"
   ],
@@ -28,10 +27,12 @@
       "tree_building.go"
     ],
     "test": [
-      "tree_building_test.go"
+      "tree_building_test.go",
+      "cases_test.go"
     ],
     "example": [
       ".meta/example.go"
     ]
-  }
+  },
+  "blurb": "Refactor a tree building algorithm."
 }

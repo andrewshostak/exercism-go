@@ -1,8 +1,9 @@
-package tree
+package treebuilding
 
 import (
+	"cmp"
 	"errors"
-	"sort"
+	"slices"
 )
 
 type Record struct {
@@ -20,14 +21,12 @@ func Build(records []Record) (*Node, error) {
 		return nil, nil
 	}
 
-	sort.Slice(records, func(i, j int) bool {
-		return records[i].ID < records[j].ID
+	slices.SortFunc(records, func(i, j Record) int {
+		return cmp.Compare(i.ID, j.ID)
 	})
 
-	nodes := make([]*Node, len(records))
+	childrenOf := make(map[int][]int)
 	for i, record := range records {
-		nodes[i] = &Node{ID: record.ID}
-
 		if i == 0 && (record.Parent != 0 || record.ID != 0) {
 			return nil, errors.New("root node is invalid")
 		}
@@ -37,13 +36,22 @@ func Build(records []Record) (*Node, error) {
 		}
 
 		if i != record.ID || record.ID <= record.Parent {
-			return nil, errors.New("records are incorrect")
+			return nil, errors.New("non continuous")
 		}
 
-		if parent := nodes[record.Parent]; parent != nil {
-			parent.Children = append(parent.Children, nodes[i])
-		}
+		childrenOf[record.Parent] = append(childrenOf[record.Parent], record.ID)
 	}
 
-	return nodes[0], nil
+	return createNode(&Node{ID: 0}, childrenOf), nil
+}
+
+func createNode(node *Node, childrenOf map[int][]int) *Node {
+	childIDs := childrenOf[node.ID]
+	if len(childIDs) != 0 {
+		node.Children = make([]*Node, 0, len(childIDs))
+		for _, id := range childIDs {
+			node.Children = append(node.Children, createNode(&Node{ID: id}, childrenOf))
+		}
+	}
+	return node
 }

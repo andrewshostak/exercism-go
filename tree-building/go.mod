@@ -1,3 +1,3 @@
-module tree
+module treebuilding
 
-go 1.13
+go 1.27
